@@ -6,7 +6,7 @@ Provides REST API endpoints for the React frontend
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import uvicorn
 import os
 from urag_inference import URAGInference

@@ -6,7 +6,8 @@ Implements URAG-D (Document Augmentation) and URAG-F (FAQ Enrichment)
 import json
 import os
 from typing import List, Dict, Any
-from langchain_huggingface import HuggingFaceHub, HuggingFaceEmbeddings
+from langchain_community.llms import HuggingFaceHub
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.document_loaders import JSONLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
