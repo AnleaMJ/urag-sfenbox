@@ -1,5 +1,5 @@
 import React from 'react';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, ArrowRight } from 'lucide-react';
 
 interface SuggestedQuestionsProps {
   onSelectQuestion: (question: string) => void;
@@ -22,21 +22,24 @@ export const SuggestedQuestions: React.FC<SuggestedQuestionsProps> = ({
   disabled 
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-orange-100 p-6">
       <div className="flex items-center gap-2 mb-4">
-        <HelpCircle size={20} className="text-blue-600" />
+        <HelpCircle size={20} className="text-orange-600" />
         <h3 className="font-semibold text-gray-800">Suggested Questions</h3>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div className="space-y-2">
         {SUGGESTED_QUESTIONS.map((question, index) => (
           <button
             key={index}
             onClick={() => onSelectQuestion(question)}
             disabled={disabled}
-            className="text-left p-3 text-sm bg-gray-50 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-transparent hover:border-blue-200"
+            className="w-full text-left p-3 text-sm bg-gradient-to-r from-orange-50 to-green-50 hover:from-orange-100 hover:to-green-100 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-orange-100 hover:border-orange-200 group hover:shadow-md"
           >
-            {question}
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700 group-hover:text-gray-800">{question}</span>
+              <ArrowRight size={14} className="text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            </div>
           </button>
         ))}
       </div>
