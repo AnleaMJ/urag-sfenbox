@@ -287,4 +287,3 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ position = 'bottom-right
     </div>
   );
 };
-</parameter>
