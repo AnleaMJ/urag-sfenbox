@@ -10,6 +10,7 @@ from langchain_community.llms import HuggingFaceHub
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.document_loaders import JSONLoader
+from langchain_community.document_loaders import PyPDFLoader  # <-- Add this import
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
@@ -40,23 +41,52 @@ class URAGPreparation:
             separators=["\n\n", "\n", ". ", " ", ""]
         )
     
-    def urag_d_augment_documents(self) -> List[Dict[str, Any]]:
+    def _load_pdf_documents(self, pdf_folder: str) -> List[Dict[str, Any]]:
+        """
+        Load all PDF files from a folder and return as list of dicts with 'content' and 'metadata'.
+        """
+        pdf_docs = []
+        for fname in os.listdir(pdf_folder):
+            if fname.lower().endswith(".pdf"):
+                pdf_path = os.path.join(pdf_folder, fname)
+                try:
+                    loader = PyPDFLoader(pdf_path)
+                    pages = loader.load()
+                    for i, page in enumerate(pages):
+                        pdf_docs.append({
+                            "content": page.page_content,
+                            "metadata": {
+                                "source": pdf_path,
+                                "page": i + 1,
+                                "title": fname
+                            }
+                        })
+                except Exception as e:
+                    print(f"Error loading PDF {fname}: {e}")
+        return pdf_docs
+
+    def urag_d_augment_documents(self, use_pdf: bool = False, pdf_folder: str = None) -> List[Dict[str, Any]]:
         """
         URAG-D: Document Augmentation
-        1. Semantic chunking
-        2. General context extraction
-        3. Chunk rewriting for coherence
-        4. Summary generation
+        Optionally process PDFs as context if use_pdf=True and pdf_folder is provided.
         """
         print("Starting URAG-D: Document Augmentation...")
-        
-        # Load crawled documents
-        try:
-            with open(Config.COLLEGE_DATA_FILE, 'r', encoding='utf-8') as f:
-                crawled_data = json.load(f)
-        except FileNotFoundError:
-            print("No crawled data found. Run data_collection.py first.")
-            return []
+
+        if use_pdf and pdf_folder:
+            print(f"Loading PDF documents from {pdf_folder} ...")
+            crawled_data = self._load_pdf_documents(pdf_folder)
+            # Adapt to expected format
+            for doc in crawled_data:
+                doc.setdefault('url', doc['metadata'].get('source', ''))
+                doc.setdefault('title', doc['metadata'].get('title', ''))
+        else:
+            # Load crawled documents from JSON
+            try:
+                with open(Config.COLLEGE_DATA_FILE, 'r', encoding='utf-8') as f:
+                    crawled_data = json.load(f)
+            except FileNotFoundError:
+                print("No crawled data found. Run data_collection.py first or provide PDFs.")
+                return []
         
         augmented_docs = []
         
@@ -264,11 +294,11 @@ if __name__ == "__main__":
     # Run preparation pipeline
     prep = URAGPreparation()
     
-    # Step 1: Document Augmentation
+    # To use PDF context, set use_pdf=True and provide the folder path
+    # Example: augmented_docs = prep.urag_d_augment_documents(use_pdf=True, pdf_folder="path/to/pdf_folder")
     augmented_docs = prep.urag_d_augment_documents()
     
     # Step 2: FAQ Enrichment
     enriched_faqs = prep.urag_f_enrich_faqs()
     
     print("URAG preparation phase completed!")
-</parameter>
