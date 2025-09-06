@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
 import { SuggestedQuestions } from './components/SuggestedQuestions';
+import { DynamicSuggestions } from './components/DynamicSuggestions';
 import { URAGStats } from './components/URAGStats';
 import { ChatMessage as ChatMessageType } from './types/urag';
 import { uragService } from './services/uragService';
@@ -74,6 +75,15 @@ function App() {
     handleSendMessage(question);
   };
 
+  const getLastUserMessage = (): string | null => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        return messages[i].content;
+      }
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50">
       {/* Background Pattern */}
@@ -107,8 +117,14 @@ function App() {
           <div className="lg:col-span-1 space-y-6">
             <URAGStats />
             
-            {messages.length <= 1 && (
+            {messages.length <= 1 ? (
               <SuggestedQuestions 
+                onSelectQuestion={handleSuggestedQuestion}
+                disabled={isLoading}
+              />
+            ) : (
+              <DynamicSuggestions
+                lastUserQuestion={getLastUserMessage()}
                 onSelectQuestion={handleSuggestedQuestion}
                 disabled={isLoading}
               />
