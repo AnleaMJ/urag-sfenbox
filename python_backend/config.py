@@ -33,4 +33,3 @@ class Config:
     VECTOR_STORE_DIR = "vector_store"
     FAQ_COLLECTION = "faq_index"
     DOC_COLLECTION = "doc_index"
-</parameter>

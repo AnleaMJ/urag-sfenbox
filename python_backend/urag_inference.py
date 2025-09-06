@@ -7,8 +7,7 @@ import json
 import os
 from typing import Dict, Any, Optional, List
 from langchain_community.vectorstores import Chroma
-from langchain_community.llms import HuggingFaceHub
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEndpoint, HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
@@ -18,28 +17,29 @@ class URAGInference:
     def __init__(self):
         # Initialize components
         os.environ["HUGGINGFACEHUB_API_TOKEN"] = Config.HUGGINGFACEHUB_API_TOKEN
-        
-        self.llm = HuggingFaceHub(
+
+        self.llm = HuggingFaceEndpoint(
             repo_id=Config.LLM_MODEL,
-            model_kwargs={
-                "temperature": 0.7,
-                "top_p": 0.95,
-                "max_new_tokens": 512
-            }
+            huggingfacehub_api_token=Config.HUGGINGFACEHUB_API_TOKEN,
+            temperature=0.7,
+            top_p=0.95,
+            max_new_tokens=512
         )
-        
+
         self.embeddings = HuggingFaceEmbeddings(
             model_name=Config.EMBEDDING_MODEL
         )
-        
+
         # Load vector stores
         self.faq_vectorstore = None
         self.doc_vectorstore = None
+        self.faq_retriever = None
+        self.doc_retriever = None
         self._load_vector_stores()
-        
+
         # Setup retrievers
         self._setup_retrievers()
-        
+
         # Setup chains
         self._setup_chains()
     
@@ -90,28 +90,31 @@ class URAGInference:
         self.rag_prompt = ChatPromptTemplate.from_template(
             """You are a helpful college admission assistant. Answer the student's question based on the provided context.
             Be specific, accurate, and helpful. If the context doesn't contain enough information, say so.
-            
+
             Context: {context}
-            
+
             Question: {question}
-            
+
             Answer:"""
         )
-        
-        self.rag_chain = (
-            {"context": self.doc_retriever, "question": RunnablePassthrough()}
-            | self.rag_prompt
-            | self.llm
-            | StrOutputParser()
-        )
-        
+
+        if self.doc_retriever is not None:
+            self.rag_chain = (
+                {"context": self.doc_retriever, "question": RunnablePassthrough()}
+                | self.rag_prompt
+                | self.llm
+                | StrOutputParser()
+            )
+        else:
+            self.rag_chain = None
+
         # Fallback chain
         self.fallback_prompt = ChatPromptTemplate.from_template(
             """You are a college admission assistant. Provide a helpful general response to this question.
             Always end with a disclaimer to verify information with official sources.
-            
+
             Question: {question}
-            
+
             Response:"""
         )
         
@@ -270,4 +273,3 @@ if __name__ == "__main__":
         print(f"Type: {result['type']}")
         print(f"Confidence: {result['confidence']:.3f}")
         print(f"Response: {result['content'][:200]}...")
-</parameter>

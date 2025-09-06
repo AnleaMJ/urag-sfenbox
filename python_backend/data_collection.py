@@ -68,4 +68,3 @@ def load_crawled_data():
 if __name__ == "__main__":
     # Run data collection
     crawl_college_website()
-</parameter>

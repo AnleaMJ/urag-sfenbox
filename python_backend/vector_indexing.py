@@ -8,7 +8,7 @@ import os
 from typing import List
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from config import Config
 
 class VectorIndexer:
@@ -135,4 +135,3 @@ if __name__ == "__main__":
     doc_store = indexer.create_document_index()
     
     print("Vector indexing completed!")
-</parameter>

@@ -6,8 +6,7 @@ Implements URAG-D (Document Augmentation) and URAG-F (FAQ Enrichment)
 import json
 import os
 from typing import List, Dict, Any
-from langchain_community.llms import HuggingFaceHub
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEndpoint, HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.document_loaders import JSONLoader
 from langchain_community.document_loaders import PyPDFLoader  # <-- Add this import
@@ -20,20 +19,21 @@ class URAGPreparation:
     def __init__(self):
         # Initialize LLM and embeddings
         os.environ["HUGGINGFACEHUB_API_TOKEN"] = Config.HUGGINGFACEHUB_API_TOKEN
-        
-        self.llm = HuggingFaceHub(
+
+        # Replace HuggingFaceHub with HuggingFaceEndpoint
+        self.llm = HuggingFaceEndpoint(
             repo_id=Config.LLM_MODEL,
-            model_kwargs={
-                "temperature": 0.7,
-                "top_p": 0.95,
-                "max_new_tokens": 512
-            }
+            huggingfacehub_api_token=Config.HUGGINGFACEHUB_API_TOKEN,
+            temperature=0.7,
+            top_p=0.95,
+            max_new_tokens=512
         )
-        
+
+        # Replace HuggingFaceEmbeddings import
         self.embeddings = HuggingFaceEmbeddings(
             model_name=Config.EMBEDDING_MODEL
         )
-        
+
         # Text splitter for semantic chunking
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
