@@ -65,29 +65,64 @@ class URAGPreparation:
                     print(f"Error loading PDF {fname}: {e}")
         return pdf_docs
 
-    def urag_d_augment_documents(self, use_pdf: bool = False, pdf_folder: str = None) -> List[Dict[str, Any]]:
+    def crawl_pdfs_and_save_json(self, pdf_folder: str, output_json: str):
+        """
+        Crawl all PDFs in pdf_folder, extract text, and save as JSON for fast future access.
+        """
+        pdf_docs = self._load_pdf_documents(pdf_folder)
+        # Save extracted PDF data as JSON
+        with open(output_json, 'w', encoding='utf-8') as f:
+            json.dump(pdf_docs, f, indent=4, ensure_ascii=False)
+        print(f"Saved crawled PDF data to {output_json}")
+        return pdf_docs
+
+    def urag_d_augment_documents(
+        self,
+        use_pdf: bool = False,
+        pdf_folder: str = None,
+        use_firecrawl: bool = True,
+        firecrawl_json: str = None,
+        pdf_json: str = "pdf_crawled_data.json"
+    ) -> List[Dict[str, Any]]:
         """
         URAG-D: Document Augmentation
-        Optionally process PDFs as context if use_pdf=True and pdf_folder is provided.
+        Processes PDFs and/or firecrawl (web-crawled JSON) data as context.
+        Automatically crawls PDFs and saves as JSON for faster future runs.
         """
         print("Starting URAG-D: Document Augmentation...")
 
+        crawled_data = []
+
+        # Load firecrawl (web-crawled) data from JSON
+        if use_firecrawl:
+            firecrawl_path = firecrawl_json or Config.COLLEGE_DATA_FILE
+            try:
+                with open(firecrawl_path, 'r', encoding='utf-8') as f:
+                    crawled_data.extend(json.load(f))
+                print(f"Loaded {len(crawled_data)} firecrawl (web) documents from {firecrawl_path}")
+            except FileNotFoundError:
+                print(f"No firecrawl data found at {firecrawl_path}. Skipping web data.")
+
+        # Load PDF documents from cached JSON if available, else crawl and save
         if use_pdf and pdf_folder:
-            print(f"Loading PDF documents from {pdf_folder} ...")
-            crawled_data = self._load_pdf_documents(pdf_folder)
+            if os.path.exists(pdf_json):
+                print(f"Loading PDF data from cached JSON: {pdf_json}")
+                with open(pdf_json, 'r', encoding='utf-8') as f:
+                    pdf_docs = json.load(f)
+            else:
+                print(f"Crawling PDFs in {pdf_folder} and saving to {pdf_json} ...")
+                pdf_docs = self.crawl_pdfs_and_save_json(pdf_folder, pdf_json)
             # Adapt to expected format
-            for doc in crawled_data:
+            for doc in pdf_docs:
                 doc.setdefault('url', doc['metadata'].get('source', ''))
                 doc.setdefault('title', doc['metadata'].get('title', ''))
-        else:
-            # Load crawled documents from JSON
-            try:
-                with open(Config.COLLEGE_DATA_FILE, 'r', encoding='utf-8') as f:
-                    crawled_data = json.load(f)
-            except FileNotFoundError:
-                print("No crawled data found. Run data_collection.py first or provide PDFs.")
-                return []
-        
+            crawled_data.extend(pdf_docs)
+            print(f"Loaded {len(pdf_docs)} PDF documents.")
+
+        if not crawled_data:
+            print("No documents found. Please provide firecrawl JSON and/or PDFs.")
+            return []
+
         augmented_docs = []
         
         for i, page_data in enumerate(crawled_data):
@@ -293,12 +328,18 @@ class URAGPreparation:
 if __name__ == "__main__":
     # Run preparation pipeline
     prep = URAGPreparation()
-    
-    # To use PDF context, set use_pdf=True and provide the folder path
-    # Example: augmented_docs = prep.urag_d_augment_documents(use_pdf=True, pdf_folder="path/to/pdf_folder")
-    augmented_docs = prep.urag_d_augment_documents()
-    
+
+    # Example usage:
+    # To use both firecrawl and PDF context, and cache PDF crawl as JSON:
+    augmented_docs = prep.urag_d_augment_documents(
+        use_pdf=True,
+        pdf_folder="pdf_docs",
+        use_firecrawl=True,
+        firecrawl_json=None,
+        pdf_json="pdf_crawled_data.json"
+    )
+
     # Step 2: FAQ Enrichment
     enriched_faqs = prep.urag_f_enrich_faqs()
-    
+
     print("URAG preparation phase completed!")
