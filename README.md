@@ -68,10 +68,20 @@ Run the preparation pipeline to process your data:
 python python_backend/urag_preparation.py
 ```
 
-- To use PDF files as context:
+- **PDF Crawling & Caching:**  
+  All PDFs in the `pdf_docs` folder are automatically extracted and cached as `pdf_crawled_data.json` for faster future runs.  
+  On subsequent runs, the pipeline loads PDF data from this JSON file instead of re-processing the PDFs.
+
+- To use both PDF files and firecrawl (web-crawled JSON) data as context:
   ```python
   # In urag_preparation.py __main__ section:
-  augmented_docs = prep.urag_d_augment_documents(use_pdf=True, pdf_folder="pdf_docs")
+  augmented_docs = prep.urag_d_augment_documents(
+      use_pdf=True,
+      pdf_folder="pdf_docs",
+      use_firecrawl=True,
+      firecrawl_json=None,  # or path to your firecrawl JSON file
+      pdf_json="pdf_crawled_data.json"
+  )
   ```
 
 ---
